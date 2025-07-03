@@ -1,98 +1,138 @@
-{% extends 'main_app/base.html' %}
+{% extends 'student_template/student_base.html' %}
 {% load static %}
-{% block page_title %}{{page_title}}{% endblock page_title %}
-{% block content %}
 
+{% block page_title %}
+  {{ page_title }}
+{% endblock page_title %}
+
+{% block content %}
+<div class="container-fluid">
+  <div class="row">
+    <!-- Student Info Card -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm border-left-primary">
+        <div class="card-body">
+          <h5 class="card-title text-primary">Welcome, {{ student.admin.first_name }} {{ student.admin.last_name }}</h5>
+          <p class="mb-1"><strong>Program:</strong> {{ program }}</p>
+          <p class="mb-1"><strong>Academic Year:</strong> {{ academic_year }}</p>
+          <p class="mb-1"><strong>Current Year:</strong> {{ year }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Semester Registration Status -->
+    <div class="col-md-6 mb-4">
+      <div class="card shadow-sm border-left-success">
+        <div class="card-body">
+          <h5 class="card-title text-success">Registration Status</h5>
+          <p class="mb-1">
+            <strong>Semester I:</strong>
+            {% if semester1_registered %}
+              <span class="badge badge-success">Registered</span>
+            {% else %}
+              <span class="badge badge-danger">Not Registered</span>
+            {% endif %}
+          </p>
+          <p class="mb-1">
+            <strong>Semester II:</strong>
+            {% if semester2_registered %}
+              <span class="badge badge-success">Registered</span>
+            {% else %}
+              <span class="badge badge-danger">Not Registered</span>
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase Alert (Optional placeholder for notifications) -->
+  <div id="firebase-message-area" class="row mt-3" style="display: none;">
+    <div class="col-12">
+      <div class="alert alert-info" role="alert" id="firebase-message">
+        <!-- Notification content will go here -->
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock content %}
 
 {% block custom_js %}
-  <script>
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-analytics.js"></script>
+<script src="https://www.gstatic.com/firebasejs/7.22.1/firebase-messaging.js"></script>
 
-  </script>
-        <!-- The core Firebase JS SDK is always required and must be listed first -->
-        <script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-app.js"></script>
+<script>
+  var firebaseConfig = {
+    apiKey: "AIzaSyBarDWWHTfTMSrtc5Lj3Cdw5dEvjAkFwtM",
+    authDomain: "sms-with-django.firebaseapp.com",
+    databaseURL: "https://sms-with-django.firebaseio.com",
+    projectId: "sms-with-django",
+    storageBucket: "sms-with-django.appspot.com",
+    messagingSenderId: "945324593139",
+    appId: "1:945324593139:web:03fa99a8854bbd38420c86",
+    measurementId: "G-2F2RXTL9GT"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
 
-        <!-- TODO: Add SDKs for Firebase products that you want to use
-         https://firebase.google.com/docs/web/setup#available-libraries -->
-        <script src="https://www.gstatic.com/firebasejs/7.23.0/firebase-analytics.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/7.22.1/firebase-messaging.js"></script>
-    
-    
-        <script>
-            // Your web app's Firebase configuration
-            // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-            var firebaseConfig = {
-                apiKey: "AIzaSyBarDWWHTfTMSrtc5Lj3Cdw5dEvjAkFwtM",
-                authDomain: "sms-with-django.firebaseapp.com",
-                databaseURL: "https://sms-with-django.firebaseio.com",
-                projectId: "sms-with-django",
-                storageBucket: "sms-with-django.appspot.com",
-                messagingSenderId: "945324593139",
-                appId: "1:945324593139:web:03fa99a8854bbd38420c86",
-                measurementId: "G-2F2RXTL9GT"
-            };
-            // Initialize Firebase
-            firebase.initializeApp(firebaseConfig)
-            const messaging = firebase.messaging();
-            function InitializeFireBaseMessaging() {
-                messaging
-                    .requestPermission()
-                    .then(function () {
-                        console.log("Notification Permission");
-                        return messaging.getToken();
-                    })
-                    .then(function (token) {
-                        console.log("Token : " + token);
-                        sendToServer(token);
-                    })
-                    .catch(function (reason) {
-                        console.log(reason)
-                    })
-            }
-            messaging.onMessage(function (payload) {
-                const notificationOption = {
-                    body: payload.notification.body,
-                    icon: payload.notification.icon,
-    
-                }
-                if (Notification.permission == 'granted') {
-                    var notification = new Notification(payload.notification.title, notificationOption);
-                    notification.onclick = function (event) {
-                        event.preventDefault();
-                        window.open(payload.notification.click_action, "_blank");
-                        notification.close();
-                    }
-                }
-                console.log(payload);
-            });
-            messaging.onTokenRefresh(function () {
-                messaging.getToken()
-                    .then(function (newToken) {
-                        console.log("New Token : " + newToken);
-                        sendToServer(newToken);
-  
-                    })
-                    .catch(function (reason) {
-                        console.log(reason)
-                    })
-            })
-    
-            function sendToServer(token){
-              $.ajax({
-                url: "{% url 'student_fcmtoken' %}",
-                type: 'POST',
-                data: {
-                    token: token,
-                }
-            }).done(function (response) {
-               
-      
-               
-            }).fail(function (response) {
-            })
-  
-            }
-            
-            InitializeFireBaseMessaging();
-        </script>
+  function InitializeFireBaseMessaging() {
+    messaging
+      .requestPermission()
+      .then(function () {
+        console.log("Notification Permission");
+        return messaging.getToken();
+      })
+      .then(function (token) {
+        console.log("Token : " + token);
+        sendToServer(token);
+      })
+      .catch(function (reason) {
+        console.log(reason)
+      })
+  }
+
+  messaging.onMessage(function (payload) {
+    const notificationOption = {
+      body: payload.notification.body,
+      icon: payload.notification.icon,
+    }
+    if (Notification.permission == 'granted') {
+      var notification = new Notification(payload.notification.title, notificationOption);
+      notification.onclick = function (event) {
+        event.preventDefault();
+        window.open(payload.notification.click_action, "_blank");
+        notification.close();
+      }
+    }
+    console.log(payload);
+  });
+
+  messaging.onTokenRefresh(function () {
+    messaging.getToken()
+      .then(function (newToken) {
+        console.log("New Token : " + newToken);
+        sendToServer(newToken);
+      })
+      .catch(function (reason) {
+        console.log(reason)
+      })
+  })
+
+  function sendToServer(token) {
+    $.ajax({
+      url: "{% url 'student_fcmtoken' %}",
+      type: 'POST',
+      data: {
+        token: token,
+      }
+    }).done(function (response) {
+      console.log("Token sent to server.");
+    }).fail(function (response) {
+      console.log("Token submission failed.");
+    })
+  }
+
+  InitializeFireBaseMessaging();
+</script>
 {% endblock custom_js %}

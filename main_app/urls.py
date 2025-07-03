@@ -3,10 +3,12 @@ from django.urls import path
 
 from main_app.EditResultView import EditResultView
 
-from . import hod_views, staff_views, student_views, views
+from . import (hod_views, staff_views, student_views, views, administrator_views, exam_views,
+others_views, accountant_views, register_views,)
 
 urlpatterns = [
     path("", views.login_page, name='login_page'),
+
     path("get_attendance", views.get_attendance, name='get_attendance'),
     path("firebase-messaging-sw.js", views.showFirebaseJS, name='showFirebaseJS'),
     path("doLogin/", views.doLogin, name='user_login'),
@@ -69,6 +71,42 @@ urlpatterns = [
     path("subject/edit/<int:subject_id>",
          hod_views.edit_subject, name='edit_subject'),
 
+         #My own handmade urls
+
+    path('add_administrator/', hod_views.add_administrator, name='add_administrator'),
+    path('manage_administrator/', hod_views.manage_administrator, name='manage_administrator'),
+    path('edit_administrator/<int:admin_id>/', hod_views.edit_administrator, name='edit_administrator'),
+    path('delete_administrator/<int:admin_id>/', hod_views.delete_administrator, name='delete_administrator'),
+
+    path('add_registrar/', hod_views.add_registrar, name='add_registrar'),
+    path('manage_registrar/', hod_views.manage_registrar, name='manage_registrar'),
+    path('edit_registrar/<int:registrar_id>/', hod_views.edit_registrar, name='edit_registrar'),
+    path('delete_registrar/<int:registrar_id>/', hod_views.delete_registrar, name='delete_registrar'),
+
+    path('add_exam_officer/', hod_views.add_exam_officer, name='add_exam_officer'),
+    path('manage_exam_officer/', hod_views.manage_exam_officer, name='manage_exam_officer'),
+    path('edit_exam_officer/<int:officer_id>/', hod_views.edit_exam_officer, name='edit_exam_officer'),
+    path('delete_exam_officer/<int:officer_id>/', hod_views.delete_exam_officer, name='delete_exam_officer'),
+
+    path('accountant/add/', hod_views.add_accountant, name='add_accountant'),
+    path('accountant/manage/', hod_views.manage_accountant, name='manage_accountant'),
+    path('accountant/edit/<int:accountant_id>/', hod_views.edit_accountant, name='edit_accountant'),
+    path('accountant/delete/<int:accountant_id>/', hod_views.delete_accountant, name='delete_accountant'),
+
+    # Other user URLs
+    path('other/add/', hod_views.add_other, name='add_other'),
+    path('other/manage/', hod_views.manage_other, name='manage_other'),
+    path('other/edit/<int:other_id>/', hod_views.edit_other, name='edit_other'),
+    path('other/delete/<int:other_id>/', hod_views.delete_other, name='delete_other'),
+
+    path('add-department/', hod_views.add_department, name='add_department'),
+    path('manage-department/', hod_views.manage_department, name='manage_department'),
+    path('edit-department/<str:dcode>/', hod_views.edit_department, name='edit_department'),
+    path('delete-department/<str:dcode>/', hod_views.delete_department, name='delete_department'),
+
+
+     
+
 
     # Staff
     path("staff/home/", staff_views.staff_home, name='staff_home'),
@@ -100,9 +138,12 @@ urlpatterns = [
 
 
     # Student
-    path("student/home/", student_views.student_home, name='student_home'),
-#     path("student/view/attendance/", student_views.student_view_attendance,
-#          name='student_view_attendance'),
+   
+
+
+
+    path('student/home/', student_views.student_home, name='student_home'),
+    
     path("student/apply/leave/", student_views.student_apply_leave,
          name='student_apply_leave'),
     path("student/feedback/", student_views.student_feedback,
@@ -115,5 +156,24 @@ urlpatterns = [
          name="student_view_notification"),
     path('student/view/result/', student_views.student_view_result,
          name='student_view_result'),
+
+
+
+    ##College Managers /Administarators
+
+    path('admin/dashboard/', administrator_views.admin_dashboard, name='admin_dashboard'),   
+
+    #EXAM OFFICERS
+    path('exam/dashboard/', exam_views.exam_dashboard, name='exam_dashboard'),
+
+    #ACCOUNTANT
+    path('accountant/dashboard/', accountant_views.accountant_dashboard, name='accountant_dashboard'),
+
+    #OTHER
+    path('others/dashboard/', others_views.others_dashboard, name='others_dashboard'),
+
+    #REGISTRAR
+    path('registrar/dashboard/', register_views.registrar_dashboard, name='registrar_dashboard'),
+  
 
 ]

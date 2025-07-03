@@ -1,0 +1,17 @@
+{% extends 'hod_template/hod_base.html' %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-dark">
+      <div class="card-header">
+        <h3 class="card-title">{{ page_title }}</h3>
+      </div>
+      <div class="card-body">
+        {% include "main_app/form_template.html" with form=form button_text="Update Administrator" %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

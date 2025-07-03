@@ -9,57 +9,57 @@ from django.views.decorators.csrf import csrf_exempt
 from .EmailBackend import EmailBackend
 from .models import Attendance, Session, Subject
 
-# Create your views here.
 
 
+USER_TYPE_REDIRECTS = {
+    "1": "admin_home",           # HOD
+    "2": "staff_home",           # Staff
+    "3": "student_home",         # Student
+    "4": "admin_dashboard",      # Administrator
+    "5": "exam_dashboard",       # Examination Officer
+    "6": "accountant_dashboard", # Accountant
+    "7": "others_dashboard",     # Other
+    "8": "registrar_dashboard",  # Registrar
+}
+
+def doLogin(request):
+    if request.method != "POST":
+        return HttpResponse("<h4>Access Denied</h4>", status=405)
+
+    email = request.POST.get("email", "").strip()
+    password = request.POST.get("password", "")
+
+    if not email or not password:
+        messages.error(request, "Both email and password are required.")
+        return redirect("login_page")
+
+    user = authenticate(request, email=email, password=password)
+
+
+    if user is None:
+        messages.error(request, "Invalid credentials. Please try again.")
+        return redirect("login_page")
+
+    if not user.is_active:
+        messages.error(request, "Your account is inactive. Contact admin.")
+        return redirect("login_page")
+
+    login(request, user)
+    redirect_url_name = USER_TYPE_REDIRECTS.get(user.user_type)
+
+    if redirect_url_name:
+        return redirect(reverse(redirect_url_name))
+    else:
+        logout(request)
+        messages.error(request, "Your role is not recognized.")
+        return redirect("login_page")
+
+    
 def login_page(request):
     if request.user.is_authenticated:
-        if request.user.user_type == '1':
-            return redirect(reverse("admin_home"))
-        elif request.user.user_type == '2':
-            return redirect(reverse("staff_home"))
-        else:
-            return redirect(reverse("student_home"))
-    return render(request, 'main_app/login.html')
-
-
-def doLogin(request, **kwargs):
-    if request.method != 'POST':
-        return HttpResponse("<h4>Denied</h4>")
-    else:
-        #Google recaptcha
-        # captcha_token = request.POST.get('g-recaptcha-response')
-        # captcha_url = "https://www.google.com/recaptcha/api/siteverify"
-        # captcha_key = "6LfswtgZAAAAABX9gbLqe-d97qE2g1JP8oUYritJ"
-        # data = {
-        #     'secret': captcha_key,
-        #     'response': captcha_token
-        # }
-        # # Make request
-        # try:
-        #     captcha_server = requests.post(url=captcha_url, data=data)
-        #     response = json.loads(captcha_server.text)
-        #     if response['success'] == False:
-        #         messages.error(request, 'Invalid Captcha. Try Again')
-        #         return redirect('/')
-        # except:
-        #     messages.error(request, 'Captcha could not be verified. Try Again')
-        #     return redirect('/')
-        
-        #Authenticate
-        user = EmailBackend.authenticate(request, username=request.POST.get('email'), password=request.POST.get('password'))
-        if user != None:
-            login(request, user)
-            if user.user_type == '1':
-                return redirect(reverse("admin_home"))
-            elif user.user_type == '2':
-                return redirect(reverse("staff_home"))
-            else:
-                return redirect(reverse("student_home"))
-        else:
-            messages.error(request, "Invalid details")
-            return redirect("/")
-
+        redirect_url = USER_TYPE_REDIRECTS.get(request.user.user_type, "student_home")
+        return redirect(reverse(redirect_url))
+    return render(request, "main_app/login.html")
 
 
 def logout_user(request):

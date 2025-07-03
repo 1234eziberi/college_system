@@ -1,0 +1,41 @@
+{% extends 'hod_template/hod_base.html' %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-dark">
+      <div class="card-header">
+        <h3 class="card-title">{{ page_title }}</h3>
+      </div>
+      <div class="card-body">
+        {% if registrars %}
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Gender</th><th>Address</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for registrar in registrars %}
+                <tr>
+                  <td>{{ registrar.first_name }} {{ registrar.last_name }}</td>
+                  <td>{{ registrar.email }}</td>
+                  <td>{{ registrar.get_gender_display }}</td>
+                  <td>{{ registrar.address }}</td>
+                  <td>
+                    <a href="{% url 'edit_registrar' registrar.id %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'delete_registrar' registrar.id %}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Delete this registrar?');">Delete</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No registrars found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

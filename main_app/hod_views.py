@@ -89,33 +89,52 @@ def admin_home(request):
 def add_staff(request):
     form = StaffForm(request.POST or None, request.FILES or None)
     context = {'form': form, 'page_title': 'Add Staff'}
+
     if request.method == 'POST':
         if form.is_valid():
-            first_name = form.cleaned_data.get('first_name')
-            last_name = form.cleaned_data.get('last_name')
-            address = form.cleaned_data.get('address')
-            email = form.cleaned_data.get('email')
-            gender = form.cleaned_data.get('gender')
-            password = form.cleaned_data.get('password')
-            course = form.cleaned_data.get('course')
-            passport = request.FILES.get('profile_pic')
-            fs = FileSystemStorage()
-            filename = fs.save(passport.name, passport)
-            passport_url = fs.url(filename)
             try:
+                first_name = form.cleaned_data.get('first_name')
+                last_name = form.cleaned_data.get('last_name')
+                phone_number = form.cleaned_data.get('phone_number')
+                email = form.cleaned_data.get('email')
+                gender = form.cleaned_data.get('gender')
+                password = form.cleaned_data.get('password')
+                course = form.cleaned_data.get('course')
+                department = form.cleaned_data.get('department')
+
+                # 📷 Handle profile picture
+                passport = request.FILES.get('profile_pic')
+                passport_url = None
+                if passport:
+                    fs = FileSystemStorage()
+                    filename = fs.save(passport.name, passport)
+                    passport_url = fs.url(filename)
+
+                # 👤 Create user
                 user = CustomUser.objects.create_user(
-                    email=email, password=password, user_type=2, first_name=first_name, last_name=last_name, profile_pic=passport_url)
-                user.gender = gender
-                user.address = address
-                user.staff.course = course
-                user.save()
-                messages.success(request, "Successfully Added")
+                    email=email,
+                    password=password,
+                    user_type='2',  # Staff
+                    first_name=first_name,
+                    last_name=last_name,
+                    gender=gender,
+                    phone_number=phone_number,
+                    profile_pic=passport_url,
+                )
+
+                # 🔁 Update auto-created Staff profile
+                staff = user.staff  # Automatically created by signal
+                staff.course = course
+                staff.department = department
+                staff.save()
+
+                messages.success(request, "Successfully added staff.")
                 return redirect(reverse('add_staff'))
 
             except Exception as e:
-                messages.error(request, "Could Not Add " + str(e))
+                messages.error(request, f"Could not add staff: {str(e)}")
         else:
-            messages.error(request, "Please fulfil all requirements")
+            messages.error(request, "Please correct the errors below.")
 
     return render(request, 'hod_template/add_staff_template.html', context)
 
@@ -123,36 +142,123 @@ def add_staff(request):
 def add_student(request):
     student_form = StudentForm(request.POST or None, request.FILES or None)
     context = {'form': student_form, 'page_title': 'Add Student'}
+
     if request.method == 'POST':
         if student_form.is_valid():
+            # 1. Extract form data
             first_name = student_form.cleaned_data.get('first_name')
             last_name = student_form.cleaned_data.get('last_name')
-            address = student_form.cleaned_data.get('address')
+            phone_number = student_form.cleaned_data.get('phone_number')
             email = student_form.cleaned_data.get('email')
             gender = student_form.cleaned_data.get('gender')
             password = student_form.cleaned_data.get('password')
             course = student_form.cleaned_data.get('course')
             session = student_form.cleaned_data.get('session')
-            passport = request.FILES['profile_pic']
-            fs = FileSystemStorage()
-            filename = fs.save(passport.name, passport)
-            passport_url = fs.url(filename)
-            try:
-                user = CustomUser.objects.create_user(
-                    email=email, password=password, user_type=3, first_name=first_name, last_name=last_name, profile_pic=passport_url)
-                user.gender = gender
-                user.address = address
-                user.student.session = session
-                user.student.course = course
-                user.save()
-                messages.success(request, "Successfully Added")
-                return redirect(reverse('add_student'))
-            except Exception as e:
-                messages.error(request, "Could Not Add: " + str(e))
+
+            # 2. Handle profile picture upload
+            passport = request.FILES.get('profile_pic')
+            passport_url = None
+            if passport:
+                fs = FileSystemStorage()
+                filename = fs.save(passport.name, passport)
+                passport_url = fs.url(filename)
+
+            # 3. Create CustomUser with user_type '3' (Student)
+            user = CustomUser.objects.create_user(
+                email=email,
+                password=password,
+                user_type='3',
+                first_name=first_name,
+                last_name=last_name,
+                profile_pic=passport_url,
+                gender=gender,
+                address=address
+            )
+
+            # 4. Immediately create corresponding Student profile linked to the user
+            Student.objects.create(admin=user, course=course, session=session)
+
+            messages.success(request, "Student added successfully.")
+            return redirect(reverse('add_student'))
         else:
-            messages.error(request, "Could Not Add: ")
+            messages.error(request, "Please correct the errors below.")
+
     return render(request, 'hod_template/add_student_template.html', context)
 
+import logging
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_POST    
+
+logger = logging.getLogger(__name__)
+
+def is_hod_or_superuser(user):
+    return user.is_authenticated and (user.user_type == '1' or user.is_superuser)
+
+@login_required
+@user_passes_test(is_hod_or_superuser)
+def add_department(request):
+    form = DepartmentForm(request.POST or None)
+    context = {
+        'form': form,
+        'page_title': 'Add Department'
+    }
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "✅ Department successfully added.")
+                return redirect(reverse('add_department'))
+            except Exception as e:
+                logger.error(f"Error adding department: {e}")
+                messages.error(request, "❌ Could not add department.")
+        else:
+            messages.error(request, "⚠️ Invalid form. Please correct the errors.")
+    return render(request, 'hod_template/add_department_template.html', context)
+
+@login_required
+@user_passes_test(is_hod_or_superuser)
+def manage_department(request):
+    departments = Department.objects.all()
+    context = {
+        'departments': departments,
+        'page_title': 'Manage Departments'
+    }
+    return render(request, 'hod_template/manage_department.html', context)
+
+@login_required
+@user_passes_test(is_hod_or_superuser)
+def edit_department(request, dcode):
+    department = get_object_or_404(Department, pk=dcode)
+    form = DepartmentForm(request.POST or None, instance=department)
+    context = {
+        'form': form,
+        'page_title': 'Edit Department'
+    }
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "✅ Department updated successfully.")
+                return redirect(reverse('manage_department'))
+            except Exception as e:
+                logger.error(f"Error updating department {dcode}: {e}")
+                messages.error(request, "❌ Could not update department.")
+        else:
+            messages.error(request, "⚠️ Form is invalid.")
+    return render(request, 'hod_template/add_department_template.html', context)
+
+@login_required
+@user_passes_test(is_hod_or_superuser)
+@require_POST
+def delete_department(request, dcode):
+    department = get_object_or_404(Department, pk=dcode)
+    try:
+        department.delete()
+        messages.success(request, "✅ Department deleted successfully.")
+    except Exception as e:
+        logger.error(f"Error deleting department {dcode}: {e}")
+        messages.error(request, "❌ Could not delete department.")
+    return redirect(reverse('manage_department'))
 
 def add_course(request):
     form = CourseForm(request.POST or None)
@@ -176,31 +282,26 @@ def add_course(request):
     return render(request, 'hod_template/add_course_template.html', context)
 
 
+
+
+@login_required
 def add_subject(request):
     form = SubjectForm(request.POST or None)
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Subject successfully added.")
+                return redirect('manage_subject')
+            except Exception as e:
+                messages.error(request, f"Error adding subject: {e}")
+        else:
+            messages.error(request, "Please correct the errors below.")
+    
     context = {
         'form': form,
         'page_title': 'Add Subject'
     }
-    if request.method == 'POST':
-        if form.is_valid():
-            name = form.cleaned_data.get('name')
-            course = form.cleaned_data.get('course')
-            staff = form.cleaned_data.get('staff')
-            try:
-                subject = Subject()
-                subject.name = name
-                subject.staff = staff
-                subject.course = course
-                subject.save()
-                messages.success(request, "Successfully Added")
-                return redirect(reverse('add_subject'))
-
-            except Exception as e:
-                messages.error(request, "Could Not Add " + str(e))
-        else:
-            messages.error(request, "Fill Form Properly")
-
     return render(request, 'hod_template/add_subject_template.html', context)
 
 
@@ -231,6 +332,7 @@ def manage_course(request):
     return render(request, "hod_template/manage_course.html", context)
 
 
+@login_required
 def manage_subject(request):
     subjects = Subject.objects.all()
     context = {
@@ -252,7 +354,7 @@ def edit_staff(request, staff_id):
         if form.is_valid():
             first_name = form.cleaned_data.get('first_name')
             last_name = form.cleaned_data.get('last_name')
-            address = form.cleaned_data.get('address')
+            phone_number = form.cleaned_data.get('phone_number')
             username = form.cleaned_data.get('username')
             email = form.cleaned_data.get('email')
             gender = form.cleaned_data.get('gender')
@@ -273,7 +375,7 @@ def edit_staff(request, staff_id):
                 user.first_name = first_name
                 user.last_name = last_name
                 user.gender = gender
-                user.address = address
+                user.phone_number = phone_number
                 staff.course = course
                 user.save()
                 staff.save()
@@ -301,7 +403,7 @@ def edit_student(request, student_id):
         if form.is_valid():
             first_name = form.cleaned_data.get('first_name')
             last_name = form.cleaned_data.get('last_name')
-            address = form.cleaned_data.get('address')
+            phone_number = form.cleaned_data.get('phone_number')
             username = form.cleaned_data.get('username')
             email = form.cleaned_data.get('email')
             gender = form.cleaned_data.get('gender')
@@ -324,7 +426,7 @@ def edit_student(request, student_id):
                 user.last_name = last_name
                 student.session = session
                 user.gender = gender
-                user.address = address
+                user.phone_number = phone_number
                 student.course = course
                 user.save()
                 student.save()
@@ -362,31 +464,27 @@ def edit_course(request, course_id):
     return render(request, 'hod_template/edit_course_template.html', context)
 
 
+@login_required
 def edit_subject(request, subject_id):
-    instance = get_object_or_404(Subject, id=subject_id)
-    form = SubjectForm(request.POST or None, instance=instance)
+    subject = get_object_or_404(Subject, id=subject_id)
+    form = SubjectForm(request.POST or None, instance=subject)
+    
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                form.save()
+                messages.success(request, "Subject successfully updated.")
+                return redirect('manage_subject')
+            except Exception as e:
+                messages.error(request, f"Error updating subject: {e}")
+        else:
+            messages.error(request, "Please correct the form.")
+
     context = {
         'form': form,
         'subject_id': subject_id,
         'page_title': 'Edit Subject'
     }
-    if request.method == 'POST':
-        if form.is_valid():
-            name = form.cleaned_data.get('name')
-            course = form.cleaned_data.get('course')
-            staff = form.cleaned_data.get('staff')
-            try:
-                subject = Subject.objects.get(id=subject_id)
-                subject.name = name
-                subject.staff = staff
-                subject.course = course
-                subject.save()
-                messages.success(request, "Successfully Updated")
-                return redirect(reverse('edit_subject', args=[subject_id]))
-            except Exception as e:
-                messages.error(request, "Could Not Add " + str(e))
-        else:
-            messages.error(request, "Fill Form Properly")
     return render(request, 'hod_template/edit_subject_template.html', context)
 
 
@@ -707,11 +805,16 @@ def delete_course(request, course_id):
     return redirect(reverse('manage_course'))
 
 
+@login_required
 def delete_subject(request, subject_id):
     subject = get_object_or_404(Subject, id=subject_id)
-    subject.delete()
-    messages.success(request, "Subject deleted successfully!")
-    return redirect(reverse('manage_subject'))
+    try:
+        subject.delete()
+        messages.success(request, "Subject deleted successfully!")
+    except Exception as e:
+        messages.error(request, f"Could not delete subject: {e}")
+    return redirect('manage_subject')
+
 
 
 def delete_session(request, session_id):
@@ -723,3 +826,431 @@ def delete_session(request, session_id):
         messages.error(
             request, "There are students assigned to this session. Please move them to another session.")
     return redirect(reverse('manage_session'))
+
+
+
+#My hand made views 
+
+from django.contrib.auth.decorators import login_required, user_passes_test
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+# Only HOD (user_type=1) or superusers can add administrators
+def is_hod(user):
+    return user.is_superuser or user.user_type == "1"
+
+@login_required
+@user_passes_test(is_hod)
+def add_administrator(request):
+    form = AdministratorForm(request.POST or None, request.FILES or None)
+    context = {'form': form, 'page_title': 'Add Administrator'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                user.user_type = 4  # Administrator
+                user.set_password(form.cleaned_data['password'])
+
+                # Save the image securely
+                if request.FILES.get('profile_pic'):
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+
+                messages.success(request, "Administrator successfully added.")
+                return redirect(reverse('add_administrator'))
+
+            except Exception as e:
+                logger.error(f"Error creating administrator: {e}")
+                messages.error(request, f"Could not add administrator: {str(e)}")
+        else:
+            messages.error(request, "Please correct the highlighted errors.")
+
+    return render(request, 'hod_template/add_administrator_template.html', context)
+
+@login_required
+@user_passes_test(is_hod)
+def manage_administrator(request):
+    admins = CustomUser.objects.filter(user_type=4)
+    return render(request, 'hod_template/manage_administrator.html', {
+        'admins': admins,
+        'page_title': 'Manage Administrators'
+    })
+
+
+@login_required
+@user_passes_test(is_hod)
+def edit_administrator(request, admin_id):
+    admin = get_object_or_404(CustomUser, pk=admin_id, user_type=4)
+    form = AdministratorForm(request.POST or None, request.FILES or None, instance=admin)
+    context = {
+        'form': form,
+        'page_title': 'Edit Administrator'
+    }
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+
+                # Update password only if changed
+                if form.cleaned_data['password']:
+                    user.set_password(form.cleaned_data['password'])
+
+                # Optional: update profile picture
+                if 'profile_pic' in request.FILES:
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Administrator updated successfully.")
+                return redirect('manage_administrator')
+            except Exception as e:
+                messages.error(request, f"Could not update: {e}")
+        else:
+            messages.error(request, "Please correct the errors.")
+    return render(request, 'hod_template/edit_administrator_template.html', context)
+
+
+@login_required
+@user_passes_test(is_hod)
+def delete_administrator(request, admin_id):
+    admin = get_object_or_404(CustomUser, pk=admin_id, user_type=4)
+    try:
+        admin.delete()
+        messages.success(request, "Administrator deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Error deleting: {e}")
+    return redirect('manage_administrator')
+
+
+
+@login_required
+@user_passes_test(is_hod)
+def add_registrar(request):
+    form = RegistrarForm(request.POST or None, request.FILES or None)
+    context = {'form': form, 'page_title': 'Add Registrar'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                user.user_type = 8  # Registrar
+                user.set_password(form.cleaned_data['password'])
+
+                if request.FILES.get('profile_pic'):
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Registrar successfully added.")
+                return redirect(reverse('add_registrar'))
+
+            except Exception as e:
+                messages.error(request, f"Could not add registrar: {str(e)}")
+        else:
+            messages.error(request, "Please correct the form.")
+    return render(request, 'hod_template/add_registrar_template.html', context)
+
+@login_required
+@user_passes_test(is_hod)
+def manage_registrar(request):
+    registrars = CustomUser.objects.filter(user_type=8)
+    return render(request, 'hod_template/manage_registrar.html', {
+        'registrars': registrars,
+        'page_title': 'Manage Registrars'
+    })
+
+
+@login_required
+@user_passes_test(is_hod)
+def edit_registrar(request, registrar_id):
+    registrar = get_object_or_404(CustomUser, pk=registrar_id, user_type=8)
+    form = RegistrarForm(request.POST or None, request.FILES or None, instance=registrar)
+    context = {'form': form, 'page_title': 'Edit Registrar'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                if form.cleaned_data['password']:
+                    user.set_password(form.cleaned_data['password'])
+
+                if 'profile_pic' in request.FILES:
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Registrar updated successfully.")
+                return redirect('manage_registrar')
+            except Exception as e:
+                messages.error(request, f"Update failed: {str(e)}")
+    return render(request, 'hod_template/edit_registrar_template.html', context)
+
+
+@login_required
+@user_passes_test(is_hod)
+def delete_registrar(request, registrar_id):
+    registrar = get_object_or_404(CustomUser, pk=registrar_id, user_type=8)
+    try:
+        registrar.delete()
+        messages.success(request, "Registrar deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Deletion failed: {str(e)}")
+    return redirect('manage_registrar')
+
+
+
+@login_required
+@user_passes_test(is_hod)
+def add_exam_officer(request):
+    form = ExamOfficerForm(request.POST or None, request.FILES or None)
+    context = {'form': form, 'page_title': 'Add Exam Officer'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                user.user_type = 5  # Exam Officer
+                user.set_password(form.cleaned_data['password'])
+
+                if request.FILES.get('profile_pic'):
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Exam Officer successfully added.")
+                return redirect('add_exam_officer')
+
+            except Exception as e:
+                messages.error(request, f"Could not add exam officer: {str(e)}")
+        else:
+            messages.error(request, "Please correct the form.")
+
+    return render(request, 'hod_template/add_exam_officer_template.html', context)
+
+@login_required
+@user_passes_test(is_hod)
+def manage_exam_officer(request):
+    officers = CustomUser.objects.filter(user_type=5)
+    return render(request, 'hod_template/manage_exam_officer.html', {
+        'officers': officers,
+        'page_title': 'Manage Exam Officers'
+    })
+    
+
+@login_required
+@user_passes_test(is_hod)
+def edit_exam_officer(request, officer_id):
+    officer = get_object_or_404(CustomUser, pk=officer_id, user_type=5)
+    form = ExamOfficerForm(request.POST or None, request.FILES or None, instance=officer)
+    context = {'form': form, 'page_title': 'Edit Exam Officer'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                if form.cleaned_data['password']:
+                    user.set_password(form.cleaned_data['password'])
+
+                if 'profile_pic' in request.FILES:
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Exam Officer updated successfully.")
+                return redirect('manage_exam_officer')
+            except Exception as e:
+                messages.error(request, f"Update failed: {str(e)}")
+    return render(request, 'hod_template/edit_exam_officer_template.html', context)
+
+
+
+@login_required
+@user_passes_test(is_hod)
+def delete_exam_officer(request, officer_id):
+    officer = get_object_or_404(CustomUser, pk=officer_id, user_type=5)
+    try:
+        officer.delete()
+        messages.success(request, "Exam Officer deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Deletion failed: {str(e)}")
+    return redirect('manage_exam_officer')
+
+@login_required
+@user_passes_test(is_hod)
+def add_accountant(request):
+    form = AccountantForm(request.POST or None, request.FILES or None)
+    context = {'form': form, 'page_title': 'Add Accountant'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                user.user_type = '6'  # Accountant (as string, to match CharField)
+                user.set_password(form.cleaned_data['password'])
+
+                if request.FILES.get('profile_pic'):
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Accountant successfully added.")
+                return redirect('add_accountant')
+
+            except Exception as e:
+                messages.error(request, f"Could not add accountant: {str(e)}")
+        else:
+            messages.error(request, "Please correct the form.")
+
+    return render(request, 'hod_template/add_accountant_template.html', context)
+
+
+@login_required
+@user_passes_test(is_hod)
+def manage_accountant(request):
+    accountants = CustomUser.objects.filter(user_type='6')
+    return render(request, 'hod_template/manage_accountant.html', {
+        'accountants': accountants,
+        'page_title': 'Manage Accountants'
+    })
+
+
+@login_required
+@user_passes_test(is_hod)
+def edit_accountant(request, accountant_id):
+    accountant = get_object_or_404(CustomUser, pk=accountant_id, user_type='6')
+    form = AccountantForm(request.POST or None, request.FILES or None, instance=accountant)
+    context = {'form': form, 'page_title': 'Edit Accountant'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                if form.cleaned_data['password']:
+                    user.set_password(form.cleaned_data['password'])
+
+                if 'profile_pic' in request.FILES:
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "Accountant updated successfully.")
+                return redirect('manage_accountant')
+            except Exception as e:
+                messages.error(request, f"Update failed: {str(e)}")
+    return render(request, 'hod_template/edit_accountant_template.html', context)
+
+
+@login_required
+@user_passes_test(is_hod)
+def delete_accountant(request, accountant_id):
+    accountant = get_object_or_404(CustomUser, pk=accountant_id, user_type='6')
+    try:
+        accountant.delete()
+        messages.success(request, "Accountant deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Deletion failed: {str(e)}")
+    return redirect('manage_accountant')
+
+
+@login_required
+@user_passes_test(is_hod)
+def add_other(request):
+    form = OtherForm(request.POST or None, request.FILES or None)
+    context = {'form': form, 'page_title': 'Add Other User'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                user.user_type = '7'  # Other
+                user.set_password(form.cleaned_data['password'])
+
+                if request.FILES.get('profile_pic'):
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "User successfully added.")
+                return redirect('add_other')
+
+            except Exception as e:
+                messages.error(request, f"Could not add user: {str(e)}")
+        else:
+            messages.error(request, "Please correct the form.")
+
+    return render(request, 'hod_template/add_other_template.html', context)
+
+
+@login_required
+@user_passes_test(is_hod)
+def manage_other(request):
+    others = CustomUser.objects.filter(user_type='7')
+    return render(request, 'hod_template/manage_other.html', {
+        'others': others,
+        'page_title': 'Manage Other Users'
+    })
+
+
+@login_required
+@user_passes_test(is_hod)
+def edit_other(request, other_id):
+    other = get_object_or_404(CustomUser, pk=other_id, user_type='7')
+    form = OtherForm(request.POST or None, request.FILES or None, instance=other)
+    context = {'form': form, 'page_title': 'Edit Other User'}
+
+    if request.method == 'POST':
+        if form.is_valid():
+            try:
+                user = form.save(commit=False)
+                if form.cleaned_data['password']:
+                    user.set_password(form.cleaned_data['password'])
+
+                if 'profile_pic' in request.FILES:
+                    profile_pic = request.FILES['profile_pic']
+                    fs = FileSystemStorage(location='media/profile_pics/')
+                    filename = fs.save(profile_pic.name, profile_pic)
+                    user.profile_pic = 'profile_pics/' + filename
+
+                user.save()
+                messages.success(request, "User updated successfully.")
+                return redirect('manage_other')
+            except Exception as e:
+                messages.error(request, f"Update failed: {str(e)}")
+    return render(request, 'hod_template/edit_other_template.html', context)
+
+
+@login_required
+@user_passes_test(is_hod)
+def delete_other(request, other_id):
+    other = get_object_or_404(CustomUser, pk=other_id, user_type='7')
+    try:
+        other.delete()
+        messages.success(request, "User deleted successfully.")
+    except Exception as e:
+        messages.error(request, f"Deletion failed: {str(e)}")
+    return redirect('manage_other')
+

@@ -1,0 +1,41 @@
+{% extends 'hod_template/hod_base.html' %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-dark">
+      <div class="card-header">
+        <h3 class="card-title">{{ page_title }}</h3>
+      </div>
+      <div class="card-body">
+        {% if accountants %}
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Gender</th><th>Address</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for accountant in accountants %}
+                <tr>
+                  <td>{{ accountant.first_name }} {{ accountant.last_name }}</td>
+                  <td>{{ accountant.email }}</td>
+                  <td>{{ accountant.get_gender_display }}</td>
+                  <td>{{ accountant.address }}</td>
+                  <td>
+                    <a href="{% url 'edit_accountant' accountant.id %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'delete_accountant' accountant.id %}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Delete this accountant?');">Delete</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No accountants found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

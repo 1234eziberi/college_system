@@ -1,0 +1,413 @@
+{% load static %}
+<aside class="main-sidebar sidebar-dark-info elevation-4">
+<a href="#" class="brand-link">
+    <img src="{% static 'dist/img/AdminLTELogo.png' %} " alt="AdminLTE Logo"
+        class="brand-image img-circle elevation-3" style="opacity: .8">
+    <span class="brand-text font-weight-light">Administrator Panel</span>
+</a>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <!-- Sidebar user panel (optional) -->
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+        <div class="image">
+            <img src="{{ request.user.profile_pic}}" class="img-circle elevation-2" alt="User Image">
+        </div>
+        <div class="info">
+            <a href="#" class="d-block">{{ user}}</a>
+        </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <nav class="mt-2">
+        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
+            data-accordion="false">
+
+            <li class="nav-item">
+                {% url 'staff_home' as staff_home %}
+                <a href="{{staff_home}}"
+                    class="nav-link {% if staff_home == request.path %} active {% endif %}">
+                    <i class="nav-icon fas fa-home"></i>
+                    <p>
+                        Home
+
+                    </p>
+                </a>
+            </li>
+
+            <li class="nav-item">
+                {% url 'staff_view_profile' as staff_view_profile %}
+                <a href="{{staff_view_profile}}"
+                    class="nav-link {% if staff_view_profile == request.path %} active {% endif %}">
+                    <i class="nav-icon fas fa-address-card"></i>
+                    <p>
+                        Update Profile
+
+                    </p>
+                </a>
+            </li>
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-university"></i>
+                    <p>
+                        Academic Affairs
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        {% url 'add_course' as add_course %}
+                        <a href="{{add_course}}"
+                            class="nav-link  {% if add_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Department Performance
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Course Enrollment Stats
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Exam Result Summaries
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Graduation Rates
+
+                            </p>
+                        </a>
+                    </li>
+
+
+                </ul>
+            </li>
+
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-user-graduate"></i>
+                    <p>
+                        Student Management
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        {% url 'add_course' as add_course %}
+                        <a href="{{add_course}}"
+                            class="nav-link  {% if add_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Enrollment Overview
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Student Progress Tracker
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Dropout/Retention Rates
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Student Discipline Cases
+                            </p>
+                        </a>
+                    </li>
+
+
+                </ul>
+            </li>
+
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-chalkboard-teacher"></i>
+                    <p>
+                        Staff Management
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        {% url 'add_course' as add_course %}
+                        <a href="{{add_course}}"
+                            class="nav-link  {% if add_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Academic Staff Overview
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Non-Academic Staff Overview
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Staff Attendance Reports
+
+                            </p>
+                        </a>
+                    </li>
+                    
+
+
+                </ul>
+            </li>
+
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-coins"></i>
+                    <p>
+                        Finance & Budget
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        {% url 'add_course' as add_course %}
+                        <a href="{{add_course}}"
+                            class="nav-link  {% if add_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Fee Collection Overview
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Departmental Budgets
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Expenditure Tracking
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Financial Reports (Monthly/Annual)
+
+                            </p>
+                        </a>
+                    </li>
+
+
+                </ul>
+            </li>
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-check-circle"></i>
+                    <p>
+                        Approvals
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        {% url 'add_course' as add_course %}
+                        <a href="{{add_course}}"
+                            class="nav-link  {% if add_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Pending Staff Promotions
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Course / Program Changes
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Financial Approvals
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Exam Policy Changes
+
+                            </p>
+                        </a>
+                    </li>
+
+
+
+
+                </ul>
+            </li>
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon fas fa-cogs"></i>
+                    <p>
+                        Institution Settings
+                        <i class="fas fa-angle-left right"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        {% url 'add_course' as add_course %}
+                        <a href="{{add_course}}"
+                            class="nav-link  {% if add_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Academic Calendar Settings
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Admission Policies
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Exam & Grading Policies
+
+                            </p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        {% url 'manage_course' as manage_course %}
+                        {% url 'edit_course' course_id as edit_course %}
+                        <a href="{{manage_course}}"
+                            class="nav-link  {% if edit_course == request.path or manage_course == request.path %} active {% endif %}">
+                            <i class="far fa-circle nav-icon"></i>
+                            <p>
+                                Fee Structure Configuration
+
+                            </p>
+                        </a>
+                    </li>
+
+
+                </ul>
+            </li>
+
+
+            <li class="nav-item">
+                <a href="{% url 'user_logout' %}"
+                    onclick="return confirm('Your session would be terminated.\n\nProceed?')"
+                    class="nav-link">
+                    <i class="nav-icon fas fa-power-off"></i>
+                    <p>
+                        Logout
+                    </p>
+                </a>
+            </li>
+
+        </aside>            

@@ -1,0 +1,41 @@
+{% extends 'hod_template/hod_base.html' %}
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block content %}
+<section class="content">
+  <div class="container-fluid">
+    <div class="card card-dark">
+      <div class="card-header">
+        <h3 class="card-title">{{ page_title }}</h3>
+      </div>
+      <div class="card-body">
+        {% if others %}
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Name</th><th>Email</th><th>Gender</th><th>Address</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for other in others %}
+                <tr>
+                  <td>{{ other.first_name }} {{ other.last_name }}</td>
+                  <td>{{ other.email }}</td>
+                  <td>{{ other.get_gender_display }}</td>
+                  <td>{{ other.address }}</td>
+                  <td>
+                    <a href="{% url 'edit_other' other.id %}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{% url 'delete_other' other.id %}" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Delete this user?');">Delete</a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% else %}
+          <p>No users found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

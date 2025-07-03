@@ -6,15 +6,18 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import (HttpResponseRedirect, get_object_or_404,redirect, render)
 from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 
 from .forms import *
 from .models import *
+
+@login_required
 def staff_home(request):
     staff = get_object_or_404(Staff, admin=request.user)
     total_students = Student.objects.filter(course=staff.course).count()
     total_leave = LeaveReportStaff.objects.filter(staff=staff).count()
     subjects = Subject.objects.filter(staff=staff)
-    total_subject = subjects.count()
+    total_subject = Subject.objects.filter(course=staff.course).count()
     attendance_list = Attendance.objects.filter(subject__in=subjects)
     total_attendance = attendance_list.count()
     attendance_list = []
